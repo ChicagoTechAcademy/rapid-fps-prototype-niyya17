@@ -38,10 +38,10 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Jump);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &APlayerCharacter::Shoot);
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Reload);
 	}
 }
 
@@ -77,10 +77,44 @@ void APlayerCharacter::Jump(const FInputActionValue& Value)
 }
 
 void APlayerCharacter::Shoot(const FInputActionValue& Value)
-{
-	UE_LOG(LogTemp, Warning, TEXT("You pressed a shoot button"));
-}
 
+{
+    // Attempt to fire a projectile.
+    if (ProjectileClass)
+    {
+        // Get the camera transform.
+        FVector CameraLocation;
+        FRotator CameraRotation;
+        GetActorEyesViewPoint(CameraLocation, CameraRotation);
+
+        // Set MuzzleOffset to spawn projectiles slightly in front of the camera.
+        MuzzleOffset.Set(100.0f, 50.0f, -50.0f);
+
+        // Transform MuzzleOffset from camera space to world space.
+        FVector MuzzleLocation = CameraLocation + FTransform(CameraRotation).TransformVector(MuzzleOffset);
+
+        // Skew the aim to be slightly upwards.
+        FRotator MuzzleRotation = CameraRotation;
+        MuzzleRotation.Pitch += 10.0f;
+
+        UWorld* World = GetWorld();
+        if (World)
+        {
+            FActorSpawnParameters SpawnParams;
+            SpawnParams.Owner = this;
+            SpawnParams.Instigator = GetInstigator();
+
+            // Spawn the projectile at the muzzle.
+            AFPSProjectile* Projectile = World->SpawnActor<AFPSProjectile>(ProjectileClass, MuzzleLocation, MuzzleRotation, SpawnParams);
+            if (Projectile)
+            {
+                // Set the projectile's initial trajectory.
+                FVector LaunchDirection = MuzzleRotation.Vector();
+                Projectile->FireInDirection(LaunchDirection);
+            }
+        }
+    }
+}
 void APlayerCharacter::Reload(const FInputActionValue& Value)
 {
 	UE_LOG(LogTemp, Warning, TEXT("You pressed a reload button"));

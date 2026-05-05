@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
+#include "FPSProjectile.h"
 #include "PlayerCharacter.generated.h"
 
 
