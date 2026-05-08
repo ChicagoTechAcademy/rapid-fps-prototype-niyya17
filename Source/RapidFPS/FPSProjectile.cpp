@@ -36,13 +36,13 @@ AFPSProjectile::AFPSProjectile()
         ProjectileMovementComponent->MaxSpeed = 3000.0f;
         ProjectileMovementComponent->bRotationFollowsVelocity = true;
         ProjectileMovementComponent->bShouldBounce = true;
-        ProjectileMovementComponent->Bounciness = 0.3f;
+        ProjectileMovementComponent->Bounciness = 6.3f;
         ProjectileMovementComponent->ProjectileGravityScale = 0.0f;
    
     }
 
     // Delete the projectile after 3 seconds.
-    InitialLifeSpan = 3.0f;
+    InitialLifeSpan = 32.0f;
 
 
 }
@@ -68,15 +68,12 @@ void AFPSProjectile::FireInDirection(const FVector& ShootDirection)
 
 void AFPSProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
- 
+    if (OtherActor != this && OtherComponent->IsSimulatingPhysics())
     {
-        if (OtherActor != this && OtherComponent->IsSimulatingPhysics())
-        {
-            OtherComponent->AddImpulseAtLocation(ProjectileMovementComponent->Velocity * 100.0f, Hit.ImpactPoint);
-        }
-       //Destroy();
+        OtherComponent->AddImpulseAtLocation(ProjectileMovementComponent->Velocity * 100.0f, Hit.ImpactPoint);
     }
 
 
+    //Destroy();
 }
 
