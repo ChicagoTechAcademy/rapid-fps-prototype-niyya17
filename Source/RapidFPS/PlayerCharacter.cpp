@@ -10,6 +10,12 @@ APlayerCharacter::APlayerCharacter()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+
+	currentAmmo = maxAmmo;
+	storedAmmo = maxAmmo * 2;
+
+
+
 }
 
 // Called when the game starts or when spawned
@@ -45,6 +51,11 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
+void APlayerCharacter::DecreaseAmmo(int ammoSpent)
+{
+	currentAmmo -= ammoSpent;
+}
+
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
@@ -77,46 +88,56 @@ void APlayerCharacter::Jump(const FInputActionValue& Value)
 }
 
 void APlayerCharacter::Shoot(const FInputActionValue& Value)
-
 {
-    // Attempt to fire a projectile.
-    if (ProjectileClass)
-    {
-        // Get the camera transform.
-        FVector CameraLocation;
-        FRotator CameraRotation;
-        GetActorEyesViewPoint(CameraLocation, CameraRotation);
+	if (currentAmmo > 0)
+	{
+		// Attempt to fire a projectile.
+		if (ProjectileClass)
+		{
+			// Get the camera transform.
+			FVector CameraLocation;
+			FRotator CameraRotation;
+			GetActorEyesViewPoint(CameraLocation, CameraRotation);
 
-        // Set MuzzleOffset to spawn projectiles slightly in front of the camera.
-        MuzzleOffset.Set(100.0f, 50.0f, -50.0f);
+			// Set MuzzleOffset to spawn projectiles slightly in front of the camera.
+			MuzzleOffset.Set(100.0f, 50.0f, -50.0f);
 
-        // Transform MuzzleOffset from camera space to world space.
-        FVector MuzzleLocation = CameraLocation + FTransform(CameraRotation).TransformVector(MuzzleOffset);
+			// Transform MuzzleOffset from camera space to world space.
+			FVector MuzzleLocation = CameraLocation + FTransform(CameraRotation).TransformVector(MuzzleOffset);
 
-        // Skew the aim to be slightly upwards.
-        FRotator MuzzleRotation = CameraRotation;
-        MuzzleRotation.Pitch += 10.0f;
+			// Skew the aim to be slightly upwards.
+			FRotator MuzzleRotation = CameraRotation;
+			MuzzleRotation.Pitch += 10.0f;
 
-        UWorld* World = GetWorld();
-        if (World)
-        {
-            FActorSpawnParameters SpawnParams;
-            SpawnParams.Owner = this;
-            SpawnParams.Instigator = GetInstigator();
+			UWorld* World = GetWorld();
+			if (World)
+			{
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.Owner = this;
+				SpawnParams.Instigator = GetInstigator();
 
-            // Spawn the projectile at the muzzle.
-            AFPSProjectile* Projectile = World->SpawnActor<AFPSProjectile>(ProjectileClass, MuzzleLocation, MuzzleRotation, SpawnParams);
-            if (Projectile)
-            {
-                // Set the projectile's initial trajectory.
-                FVector LaunchDirection = MuzzleRotation.Vector();
-                Projectile->FireInDirection(LaunchDirection);
-            }
-        }
-    }
+				// Spawn the projectile at the muzzle.
+				AFPSProjectile* Projectile = World->SpawnActor<AFPSProjectile>(ProjectileClass, MuzzleLocation, MuzzleRotation, SpawnParams);
+				if (Projectile)
+				{
+					// Set the projectile's initial trajectory.
+					FVector LaunchDirection = MuzzleRotation.Vector();
+					Projectile->FireInDirection(LaunchDirection);
+					DecreaseAmmo(1);
+				}
+
+			}
+		}
+	}
 }
+
 void APlayerCharacter::Reload(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("You pressed a reload button"));
+	if (storedAmmo > maxAmmo) 
+	
+    {
+		currentAmmo = maxAmmo;
+    }
+
 }
 
